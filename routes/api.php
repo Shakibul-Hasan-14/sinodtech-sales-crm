@@ -5,6 +5,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\SaleController;
+use App\Http\Controllers\Api\PublicProductController;
 
 Route::apiResource('products', ProductController::class);
 
@@ -18,3 +19,7 @@ Route::post('customers/{customer}/reengage', [CustomerController::class, 'reenga
 Route::get('sales', [SaleController::class, 'index']);
 Route::post('sales', [SaleController::class, 'store']);
 Route::get('sales/{sale}', [SaleController::class, 'show']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('public/products', [PublicProductController::class, 'index']);
+});

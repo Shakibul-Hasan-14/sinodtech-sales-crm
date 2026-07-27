@@ -20,6 +20,12 @@ A Laravel-based application for managing product inventory, sales, and customer 
 - Employee assignment — admins can assign inactive customers to employees for follow-up
 - KPI tracking — an employee's KPI score automatically increments when their assigned (previously inactive) customer makes a new purchase
 
+### E-Commerce Integration API (Bonus)
+
+A secured, external-facing endpoint exposes limited product data for a simulated third-party e-commerce platform, separate from the internal product management API. Only SKU, product name, price, available stock (no internal IDs or timestamps) fields are exposed.
+
+**Getting a test token:** Run the seeder and then the console output will print a fresh token near the end (`API Client seeded. Test token: <token>`). Copy this value and use it as a Bearer token when calling `GET /api/public/products`.
+
 ## Architecture Decisions
 
 - **Service layer** (`app/Services/SaleService.php`) — sale creation logic is isolated from the controller, keeping business rules testable and reusable.
@@ -140,3 +146,4 @@ To use:
 | GET    | `/api/sales`                      | List sales (with items + customer)   |
 | POST   | `/api/sales`                      | Record a new sale (deducts stock)    |
 | GET    | `/api/sales/{id}`                 | Sale detail                          |
+| GET    | `/api/public/products`            | Secure product API for third-party   |

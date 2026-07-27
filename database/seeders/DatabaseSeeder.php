@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
         $employees = Employee::factory()->count(5)->create();
         $products = Product::factory()->count(20)->create();
         $customers = Customer::factory()->count(30)->create();
+        $this->call(ApiClientSeeder::class);
 
         // Assign a few customers to employees
         $customers->take(10)->each(function (Customer $customer) use ($employees) {
