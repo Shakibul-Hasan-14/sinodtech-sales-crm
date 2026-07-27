@@ -25,6 +25,8 @@ A Laravel-based application for managing product inventory, sales, and customer 
 - **Email Invoices** — PDF invoice automatically generated and emailed to the customer after every successful sale
 - **E-Commerce Integration API** — secured, external-facing endpoint (`GET /api/public/products`) exposing SKU, name, price, and stock for a simulated third-party platform, protected via Sanctum Bearer token
   _Getting a test token:_ Run the seeder and then the console output will print a fresh token near the end (`API Client seeded. Test token: <token>`). Copy this value and use it as a Bearer token when calling `GET /api/public/products`.
+- **Multi-Branch Support** - not implemented
+- **Frontend** - not implemented
 
 ## Architecture Decisions
 
