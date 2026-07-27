@@ -1,59 +1,142 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# SinodTech — Sales, Inventory & CRM System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A Laravel-based application for managing product inventory, sales, and customer relationship management, built as a technical assessment.
 
-## About Laravel
+## Features Implemented
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### Sales & Inventory Management
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- Product catalog (CRUD) — name, SKU, price, stock quantity
+- Sale creation with automatic stock deduction
+- Sales are rejected if requested quantity exceeds available stock
+- Stock updates are safe under concurrent sales i.e. no overselling, even with simultaneous requests
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Customer Relationship Management (CRM)
 
-## Learning Laravel
+- Customer purchase history (full sale + item history per customer)
+- Purchase frequency and last purchase date (computed live from sales data, not stored/cached)
+- Lost customer detection — configurable inactivity period (default 90 days) via query parameter
+- Customer re-engagement — simulated promotional email (Laravel Mailable + Blade template)
+- Employee assignment — admins can assign inactive customers to employees for follow-up
+- KPI tracking — an employee's KPI score automatically increments when their assigned (previously inactive) customer makes a new purchase
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Architecture Decisions
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- **Service layer** (`app/Services/SaleService.php`) — sale creation logic is isolated from the controller, keeping business rules testable and reusable.
+- **Database transactions + row locking** — `SaleService::createSale()` wraps all writes in `DB::transaction()` and uses `lockForUpdate()` on product rows to prevent race conditions when multiple sales happen concurrently.
+- **Snapshotted pricing** — `sale_items.unit_price` stores the price at time of sale, independent of the product's current price, preserving historical accuracy.
+- **Computed CRM fields** — `last_purchase_date` and `purchase_frequency` are derived via query rather than stored columns, avoiding data drift.
+- **Query scope for lost-customer detection** — `Customer::inactive($days)` is a reusable Eloquent scope, not a scheduled job or stored status flag, so it's always accurate on demand.
+- **API routes over web routes** — all endpoints live in `routes/api.php` (stateless, no CSRF), reflecting a REST-API-first design suitable for a React/Vue frontend or third-party integration.
 
-## Laravel Sponsors
+## Tech Stack
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- Laravel 11 (PHP 8.2)
+- MySQL
+- Mailtrap / Laravel log for email
 
-### Premium Partners
+## Setup Instructions
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Prerequisites
 
-## Contributing
+- PHP 8.2+
+- Composer
+- MySQL
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Installation
 
-## Code of Conduct
+1. Clone the repository:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+   git clone https://github.com/Shakibul-Hasan-14/sinodtech-sales-crm.git
+   cd sinodtech-sales-crm
+```
 
-## Security Vulnerabilities
+2. Install PHP dependencies:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+   composer install
+```
 
-## License
+3. Copy the environment file and generate an app key:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+   cp .env.example .env
+   php artisan key:generate
+```
+
+4. Configure your database in `.env`:
+
+```env
+   DB_CONNECTION=mysql
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_DATABASE=sinodtech
+   DB_USERNAME=root
+   DB_PASSWORD=
+```
+
+5. Create the database (via phpMyAdmin, MySQL CLI, or your preferred client):
+
+```sql
+   CREATE DATABASE sinodtech;
+```
+
+6. Configure email — for real delivery via Mailtrap, add your credentials:
+
+```env
+   MAIL_MAILER=smtp
+   MAIL_HOST=sandbox.smtp.mailtrap.io
+   MAIL_PORT=2525
+   MAIL_USERNAME=your_mailtrap_username
+   MAIL_PASSWORD=your_mailtrap_password
+   MAIL_ENCRYPTION=tls
+```
+
+If left as `MAIL_MAILER=log` (default), emails are written to `storage/logs/laravel.log` instead of sent.
+
+7. Run migrations and seed the database with realistic sample data:
+
+```bash
+   php artisan migrate:fresh --seed
+```
+
+This creates 5 employees, 20 products, 30 customers, and a realistic history of sales including backdated sales so the "lost customer" detection has real data to surface.
+
+8. Start the development server:
+
+```bash
+   php artisan serve
+```
+
+The API is now available at `http://127.0.0.1:8000/api`.
+
+## API Documentation
+
+Full Postman collection with example requests for every endpoint:
+**[SinodTech API — Postman Collection](https://api.postman.com/collections/32622238-910c3bf8-f2ec-420e-a3df-f550359f13a9?access_key=PMAT-01KYJRGVB805TK3N8GPF5FNSP5)**
+
+To use:
+
+1. Import the link into Postman (Import → Link → paste URL)
+2. Set the `base_url` variable to match your local server (default: `http://127.0.0.1:8000/api`)
+3. Test using sample IDs from the seeded data
+
+## Key API Endpoints
+
+| Method | Endpoint                          | Description                          |
+| ------ | --------------------------------- | ------------------------------------ |
+| GET    | `/api/products`                   | List products                        |
+| POST   | `/api/products`                   | Create product                       |
+| PUT    | `/api/products/{id}`              | Update product                       |
+| DELETE | `/api/products/{id}`              | Delete product                       |
+| GET    | `/api/customers`                  | List customers                       |
+| GET    | `/api/customers/{id}`             | Customer detail + purchase history   |
+| GET    | `/api/customers-inactive?days=90` | List customers inactive for N days   |
+| PATCH  | `/api/customers/{id}/assign`      | Assign customer to an employee       |
+| POST   | `/api/customers/{id}/reengage`    | Send (simulated) re-engagement email |
+| GET    | `/api/employees`                  | List employees                       |
+| POST   | `/api/employees`                  | Create employee                      |
+| GET    | `/api/sales`                      | List sales (with items + customer)   |
+| POST   | `/api/sales`                      | Record a new sale (deducts stock)    |
+| GET    | `/api/sales/{id}`                 | Sale detail                          |
