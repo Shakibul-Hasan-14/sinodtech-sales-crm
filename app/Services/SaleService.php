@@ -6,7 +6,10 @@ use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
+use App\Mail\InvoiceEmail;
+
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 class SaleService
@@ -72,7 +75,11 @@ class SaleService
                 $this->rewardAssignedEmployee($customerId);
             }
 
-            return $sale->load('items.product', 'customer');
+            $sale->load('items.product', 'customer');
+
+            Mail::to($sale->customer->email)->send(new InvoiceEmail($sale));
+
+            return $sale;
         });
     }
 
